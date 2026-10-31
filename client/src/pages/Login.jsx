@@ -1,0 +1,125 @@
+import { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Layers, Mail, Lock, ArrowRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
+import ThemeToggle from '../components/ui/ThemeToggle';
+import toast from 'react-hot-toast';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  const validate = () => {
+    const errs = {};
+    if (!email) errs.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Invalid email address';
+    if (!password) errs.password = 'Password is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      await login({ email: email.trim().toLowerCase(), password });
+      navigate(from, { replace: true });
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative selection:bg-indigo-500 selection:text-white transition-colors duration-200">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Layers className="w-5 h-5" />
+            </div>
+            <span className="font-bold text-2xl tracking-tight text-gray-900 dark:text-white">
+              TaskFlow
+            </span>
+          </Link>
+        </div>
+        <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Sign in to your account
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          Or{' '}
+          <Link
+            to="/register"
+            className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+          >
+            create a new account for free
+          </Link>
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="bg-white dark:bg-gray-900 py-8 px-6 sm:px-10 shadow-xl border border-gray-200/80 dark:border-gray-800 rounded-3xl">
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <Input
+              label="Email address"
+              type="email"
+              icon={Mail}
+              placeholder="you@example.com"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors({ ...errors, email: '' });
+              }}
+              error={errors.email}
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              icon={Lock}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: '' });
+              }}
+              error={errors.password}
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={loading}
+              className="w-full mt-2"
+            >
+              <span>Sign In</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
